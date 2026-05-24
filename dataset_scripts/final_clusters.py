@@ -1,7 +1,7 @@
 import pandas as pd
 import random
 
-matched_df=pd.read_csv('clusters_matched_gsv.csv')
+matched_df=pd.read_csv('enugu_clusters_gsvmatched.csv')
 
 def cap_images(image_ids_str, max_n, seed=42):
     ids = image_ids_str.split(",")
@@ -21,4 +21,4 @@ filtered_df["image_count"] = filtered_df["image_ids"].apply(lambda x: len(x.spli
 print(f"Clusters remaining: {len(filtered_df)}")
 print(filtered_df.image_count.describe())
 
-filtered_df.to_csv("clusters_matched_filtered.csv", index=False)
+filtered_df.to_csv("enugu_clusters_gsvmatched2.csv", index=False)

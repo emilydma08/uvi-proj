@@ -1,10 +1,10 @@
 import pandas as pd
 from geopy.distance import geodesic
 
-images = pd.read_csv("data/metadata/lagos_merged_metadata.csv")
-images = images[images['source'] == 'gsv']
-dhs = pd.read_csv("data/metadata/dhs_clusters.csv")
-RADIUS_KM = 2  # Lagos is urban throughout
+images = pd.read_csv("enugu_merged_metadata.csv")
+#images = images[images['source'] == 'gsv']
+dhs = pd.read_csv("dhs_enugu_clusters.csv")
+RADIUS_KM = 2 
 
 print(f"DHS clusters: {len(dhs)}")
 print(f"Total images: {len(images)}")
@@ -41,4 +41,4 @@ print(f"Clusters with >=5 images: {len(matched_df[matched_df.image_count >= 5])}
 print(f"\nImage count distribution:")
 print(matched_df.image_count.describe())
 
-matched_df.to_csv("clusters_matched_gsv.csv", index=False)
+matched_df.to_csv("enugu_clusters_gsvmatched.csv", index=False)
