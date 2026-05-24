@@ -9,9 +9,14 @@ from tqdm import tqdm
 
 # ── Config ──────────────────────────────────────────────────────────────────
 IMAGE_DIRS = [
-    "data/raw/images/gsv",
+    "data/raw/images/abuja",
+    "data/raw/images/edo",
+    "data/raw/images/enugu",
+    "data/raw/images/kano",
+    "data/raw/images/lagos/gsv",
+    "data/raw/images/oyo",
     ]
-MATCHED_CSV = "clusters_matched_filtered.csv"
+MATCHED_CSV = "data/processed/clusters_all_cities.csv"
 OUTPUT_DIR = "gsv-features"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -60,9 +65,9 @@ def find_image(image_id):
     return None
 
 # ── Per-cluster aggregation ───────────────────────────────────────────────────
-test_path = "data/raw/images/gsv/HgVpcmJN08mLdVA_K1CyoA_0.jpg"
+"""test_path = "data/raw/images/gsv/HgVpcmJN08mLdVA_K1CyoA_0.jpg"
 test_feat = extract_features(test_path)
-print(f"Test feature shape: {test_feat.shape}")  # should print (2048,)
+print(f"Test feature shape: {test_feat.shape}")  # should print (2048,)"""
 
 df = pd.read_csv(MATCHED_CSV)
 

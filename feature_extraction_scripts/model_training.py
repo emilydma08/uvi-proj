@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import os
 
 # ── Load ──────────────────────────────────────────────────────────────────────
-X = np.load("resnet-gsv-features/X_clusters.npy")  # (44, 2048)
-y = np.load("resnet-gsv-features/y_labels.npy")    # (44,)
-cluster_ids = pd.read_csv("resnet-gsv-features/cluster_ids.csv")
+X = np.load("gsv-features/X_clusters.npy")  # (44, 2048)
+y = np.load("gsv-features/y_labels.npy")    # (44,)
+cluster_ids = pd.read_csv("gsv-features/cluster_ids.csv")
 
 print(f"X shape: {X.shape}")
 print(f"y shape: {y.shape}")
@@ -53,6 +53,7 @@ print(f"\n--- Baseline (predict mean) ---")
 print(f"R²:  {baseline_r2:.3f}")
 print(f"MAE: {baseline_mae:.3f}")
 
+"""
 # ── Plot: predicted vs actual ─────────────────────────────────────────────────
 os.makedirs("outputs", exist_ok=True)
 
@@ -64,13 +65,21 @@ plt.ylabel("Predicted Wealth Score")
 plt.title(f"Predicted vs Actual Wealth\nR²={r2:.3f}, MAE={mae:.3f}")
 plt.legend()
 plt.tight_layout()
-plt.savefig("outputs/gsv_resnet_predicted_vs_actual.png", dpi=150)
+plt.savefig("outputs/all_cities_predicted_vs_actual.png", dpi=150)
 plt.show()
 print("Saved predicted_vs_actual.png")
 
+
 # ── Try different alpha values ────────────────────────────────────────────────
 print("\n--- Ridge alpha sweep ---")
-for alpha in [0.01, 0.1, 1.0, 10.0, 100.0]:
-    model = Ridge(alpha=alpha)
-    preds = cross_val_predict(model, X_pca, y, cv=loo)
-    print(f"alpha={alpha:6}: R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")
+model = Ridge(alpha=100.0)
+preds = cross_val_predict(model, X_pca, y, cv=loo)
+print(f"R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")
+"""
+
+print("\nPCA components sweep (alpha=100):")
+for n in [55, 60, 65, 70, 75]:
+    pca = PCA(n_components=n, random_state=42)
+    X_pca = pca.fit_transform(X_scaled)
+    preds = cross_val_predict(Ridge(alpha=100), X_pca, y, cv=loo)
+    print(f"n_components={n}: R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")
