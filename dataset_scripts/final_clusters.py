@@ -21,4 +21,4 @@ filtered_df["image_count"] = filtered_df["image_ids"].apply(lambda x: len(x.spli
 print(f"Clusters remaining: {len(filtered_df)}")
 print(filtered_df.image_count.describe())
 
-filtered_df.to_csv("enugu_clusters_gsvmatched2.csv", index=False)
+filtered_df.to_csv("more_clusters_gsvmatched.csv", index=False)

@@ -1,8 +1,8 @@
 import pandas as pd
 
-gsv = pd.read_csv('gsv_enugu_metadata.csv')
+gsv = pd.read_csv('gsv_more_metadata.csv')
 #mapillary = pd.read_csv('mapillary/mapillary_data/mapillary_lagos_merged.csv')
-clusters = pd.read_csv('dhs_enugu_clusters.csv')
+clusters = pd.read_csv('dhs_kaduna_clusters.csv')
 
 gsv_rows = []
 
@@ -45,4 +45,4 @@ mapillary_df = mapillary_df[[
 
 all_images = pd.concat([gsv_df], ignore_index=True)
 all_images["year"] = pd.to_datetime(all_images["date"]).dt.year
-all_images.to_csv('enugu_merged_metadata.csv', index=False)
+all_images.to_csv('more_merged_metadata.csv', index=False)

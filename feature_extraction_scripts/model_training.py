@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import os
 
 # ── Load ──────────────────────────────────────────────────────────────────────
-X = np.load("gsv-features/X_clusters.npy")  # (44, 2048)
-y = np.load("gsv-features/y_labels.npy")    # (44,)
-cluster_ids = pd.read_csv("gsv-features/cluster_ids.csv")
+X = np.load("all-cities-pt2-features/X_clusters.npy")  # (44, 2048)
+y = np.load("all-cities-pt2-features/y_labels.npy")    # (44,)
+cluster_ids = pd.read_csv("all-cities-pt2-features/cluster_ids.csv")
 
 print(f"X shape: {X.shape}")
 print(f"y shape: {y.shape}")
@@ -53,7 +53,7 @@ print(f"\n--- Baseline (predict mean) ---")
 print(f"R²:  {baseline_r2:.3f}")
 print(f"MAE: {baseline_mae:.3f}")
 
-"""
+
 # ── Plot: predicted vs actual ─────────────────────────────────────────────────
 os.makedirs("outputs", exist_ok=True)
 
@@ -71,15 +71,15 @@ print("Saved predicted_vs_actual.png")
 
 
 # ── Try different alpha values ────────────────────────────────────────────────
-print("\n--- Ridge alpha sweep ---")
-model = Ridge(alpha=100.0)
-preds = cross_val_predict(model, X_pca, y, cv=loo)
-print(f"R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")
-"""
+print("Alpha sweep:")
+for alpha in [100.0, 1000.0, 10000.0]:
+    preds = cross_val_predict(Ridge(alpha=alpha), X_pca, y, cv=loo)
+    print(f"alpha={alpha:7}: R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")
 
-print("\nPCA components sweep (alpha=100):")
+
+print("\nPCA components sweep (alpha=1000):")
 for n in [55, 60, 65, 70, 75]:
     pca = PCA(n_components=n, random_state=42)
     X_pca = pca.fit_transform(X_scaled)
-    preds = cross_val_predict(Ridge(alpha=100), X_pca, y, cv=loo)
+    preds = cross_val_predict(Ridge(alpha=1000), X_pca, y, cv=loo)
     print(f"n_components={n}: R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")
