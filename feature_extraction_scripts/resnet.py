@@ -18,7 +18,7 @@ IMAGE_DIRS = [
     "data/raw/images/more"
     ]
 MATCHED_CSV = "data/processed/clusters_all_cities.csv"
-OUTPUT_DIR = "all-cities-pt2-features"
+OUTPUT_DIR = "all-cities-pt2-features-aggregation"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ── Model ────────────────────────────────────────────────────────────────────
@@ -97,7 +97,9 @@ for _, row in tqdm(df.iterrows(), total=len(df), desc="Clusters"):
         continue
 
     # Aggregate: mean pooling across all image feature vectors
-    cluster_vector = np.mean(vectors, axis=0)  # (2048,)
+    cluster_mean = np.mean(vectors, axis=0)
+    cluster_std = np.std(vectors, axis=0)
+    cluster_vector = np.concatenate([cluster_mean, cluster_std])
     cluster_features.append(cluster_vector)
     cluster_labels.append(wealth)
     cluster_ids.append(cluster_id)

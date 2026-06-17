@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import os
 
 # ── Load ──────────────────────────────────────────────────────────────────────
-X = np.load("all-cities-pt2-features/X_clusters.npy")  # (44, 2048)
-y = np.load("all-cities-pt2-features/y_labels.npy")    # (44,)
-cluster_ids = pd.read_csv("all-cities-pt2-features/cluster_ids.csv")
+X = np.load("all-cities-pt2-features-agg/X_clusters.npy")  # (44, 2048)
+y = np.load("all-cities-pt2-features-agg/y_labels.npy")    # (44,)
+cluster_ids = pd.read_csv("all-cities-pt2-features-agg/cluster_ids.csv")
 
 print(f"X shape: {X.shape}")
 print(f"y shape: {y.shape}")
@@ -65,7 +65,7 @@ plt.ylabel("Predicted Wealth Score")
 plt.title(f"Predicted vs Actual Wealth\nR²={r2:.3f}, MAE={mae:.3f}")
 plt.legend()
 plt.tight_layout()
-plt.savefig("outputs/all_cities_predicted_vs_actual.png", dpi=150)
+plt.savefig("outputs/all_cities_agg_predicted_vs_actual.png", dpi=150)
 plt.show()
 print("Saved predicted_vs_actual.png")
 
