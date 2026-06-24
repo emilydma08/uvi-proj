@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import os
 
 # ── Load ──────────────────────────────────────────────────────────────────────
-X = np.load("all-cities-pt2-features-agg/X_clusters.npy")  # (44, 2048)
-y = np.load("all-cities-pt2-features-agg/y_labels.npy")    # (44,)
-cluster_ids = pd.read_csv("all-cities-pt2-features-agg/cluster_ids.csv")
+X = np.load("features_clip_citiespt3/X_clusters.npy")  # (44, 2048)
+y = np.load("features_clip_citiespt3/y_labels.npy")    # (44,)
+cluster_ids = pd.read_csv("features_clip_citiespt3/cluster_ids.csv")
 
 print(f"X shape: {X.shape}")
 print(f"y shape: {y.shape}")
@@ -65,21 +65,21 @@ plt.ylabel("Predicted Wealth Score")
 plt.title(f"Predicted vs Actual Wealth\nR²={r2:.3f}, MAE={mae:.3f}")
 plt.legend()
 plt.tight_layout()
-plt.savefig("outputs/all_cities_agg_predicted_vs_actual.png", dpi=150)
+plt.savefig("outputs/features_clip_cities3_predicted_vs_actual.png", dpi=150)
 plt.show()
 print("Saved predicted_vs_actual.png")
 
 
 # ── Try different alpha values ────────────────────────────────────────────────
 print("Alpha sweep:")
-for alpha in [100.0, 1000.0, 10000.0]:
+for alpha in [260, 300, 350, 400, 450, 500]:
     preds = cross_val_predict(Ridge(alpha=alpha), X_pca, y, cv=loo)
     print(f"alpha={alpha:7}: R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")
 
 
-print("\nPCA components sweep (alpha=1000):")
-for n in [55, 60, 65, 70, 75]:
+print("\nPCA components sweep (alpha=200):")
+for n in [110, 120, 130, 150]:
     pca = PCA(n_components=n, random_state=42)
     X_pca = pca.fit_transform(X_scaled)
-    preds = cross_val_predict(Ridge(alpha=1000), X_pca, y, cv=loo)
+    preds = cross_val_predict(Ridge(alpha=200), X_pca, y, cv=loo)
     print(f"n_components={n}: R²={r2_score(y, preds):.3f}, MAE={mean_absolute_error(y, preds):.3f}")

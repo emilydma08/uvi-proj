@@ -10,15 +10,23 @@ from tqdm import tqdm
 # ── Config ──────────────────────────────────────────────────────────────────
 IMAGE_DIRS = [
     "data/raw/images/abuja",
+    "data/raw/images/akwa",
+    "data/raw/images/benue",
+    "data/raw/images/ebonyi",
     "data/raw/images/edo",
     "data/raw/images/enugu",
+    "data/raw/images/kaduna",
     "data/raw/images/kano",
     "data/raw/images/lagos/gsv",
+    "data/raw/images/more",
+    "data/raw/images/niger",
     "data/raw/images/oyo",
-    "data/raw/images/more"
-    ]
-MATCHED_CSV = "data/processed/clusters_all_cities.csv"
-OUTPUT_DIR = "all-cities-pt2-features-aggregation"
+    "data/raw/images/plateau",
+    "data/raw/images/rivers",
+    "data/raw/images/sokoto"
+]
+MATCHED_CSV = "data/processed/clusters_cities_pt3.csv"
+OUTPUT_DIR = "all-cities-pt3-features-aggregation"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ── Model ────────────────────────────────────────────────────────────────────

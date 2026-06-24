@@ -41,11 +41,11 @@ merged = cluster_data.merge(
 #print(merged["ADM1NAME"].unique())
 
 
-abuja_clusters = merged[merged["ADM1NAME"] == "OSUN"]
+abuja_clusters = merged[merged["ADM1NAME"] == "AKWA IBOM"]
 
 final_data = abuja_clusters[["cluster_id", "wealth_num", "urban_rural", "LATNUM", "LONGNUM"]]
 print(final_data.shape)
 print(final_data.isnull().sum())
 print(final_data["wealth_num"].describe())
 print(final_data["wealth_num"].value_counts(bins=5))
-final_data.to_csv("dhs_osun_clusters.csv", index=False)
+final_data.to_csv("dhs_akwa_clusters.csv", index=False)

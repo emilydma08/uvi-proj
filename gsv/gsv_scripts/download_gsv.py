@@ -20,9 +20,9 @@ import numpy as np
 
 
 # ── Config ────────────────────────────────────────────────────────────────────
-CLUSTERS_CSV  = Path("more_clusters_gsvmatched.csv")
-METADATA_CSV  = Path("more_merged_metadata.csv")
-IMG_DIR       = Path("data/raw/images/more")
+CLUSTERS_CSV  = Path("data/metadata/akwa/akwa_clusters_gsvmatched.csv")
+METADATA_CSV  = Path("data/metadata/akwa/akwa_merged_metadata.csv")
+IMG_DIR       = Path("data/raw/images/akwa")
 LOG_DIR       = Path("logs")
 FAILED_LOG    = LOG_DIR / "failed_images.txt"
 

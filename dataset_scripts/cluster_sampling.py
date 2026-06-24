@@ -2,9 +2,9 @@ import pandas as pd
 import random
 from geopy.distance import geodesic
 
-images = pd.read_csv("more_merged_metadata.csv")
+images = pd.read_csv("data/metadata/akwa/akwa_merged_metadata.csv")
 #images = images[images['source'] == 'gsv']
-dhs = pd.read_csv("dhs_more_clusters.csv")
+dhs = pd.read_csv("data/metadata/akwa/dhs_akwa_clusters.csv")
 RADIUS_KM = 2
 MIN_IMAGES = 99
 MAX_IMAGES = 250
@@ -61,4 +61,4 @@ print(f"\n--- After Filtering & Capping ---")
 print(f"Clusters remaining: {len(filtered_df)}")
 print(filtered_df.image_count.describe())
 
-filtered_df.to_csv("more_clusters_gsvmatched.csv", index=False)
+filtered_df.to_csv("akwa_clusters_gsvmatched.csv", index=False)
