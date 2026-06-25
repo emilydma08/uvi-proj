@@ -1,0 +1,145 @@
+import os
+import csv
+import requests
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dotenv import load_dotenv
+
+load_dotenv()
+gsv_key = os.getenv("GSV_KEY")
+
+API_KEY = gsv_key
+OUTPUT_CSV = "mombasa_merged_metadata.csv"
+
+STEP_DEG = 0.001        # ~110m spacing
+GSV_RADIUS_M = 150
+HEADINGS = [0, 90, 180, 270]
+MAX_WORKERS = 12
+TARGET_LOCATIONS = 25000
+
+TILES = [(39.6, -4.25, 39.65, -4.2), (38.95, -3.75, 39.0, -3.7), (39.55, -4.0, 39.6, -3.95), (39.05, -3.7, 39.1, -3.65), (39.55, -4.3, 39.6, -4.25), (39.5, -4.25, 39.55, -4.2), (39.05, -3.8, 39.1, -3.75), (39.4, -4.45, 39.45, -4.4), (39.55, -4.35, 39.6, -4.3), (39.45, -4.25, 39.5,-4.2), (39.15, -4.55, 39.2, -4.5), (39.6, -4.3, 39.65, -4.25), (39.1, -4.5, 39.15, -4.45), (39.1, -4.55, 39.15, -4.5), (39.5, -4.5, 39.55, -4.45), (39.4, -4.5, 39.45, -4.45), (38.95, -3.8, 39.0, -3.75), (39.45, -4.3, 39.5, -4.25), (39.15, -4.6, 39.2, -4.55), (39.45, -4.45,39.5, -4.4), (39.1, -4.6, 39.15, -4.55), (39.45, -4.5, 39.5, -4.45), (39.5, -4.0, 39.55, -3.95), (39.0, -3.7, 39.05, -3.65), (39.45, -4.0, 39.5, -3.95), (39.45, -4.55, 39.5, -4.5), (39.6, -4.35, 39.65, -4.3), (39.45, -3.95, 39.5, -3.9), (39.05, -4.6, 39.1, -4.55), (39.5, -4.55, 39.55, -4.5), (39.5, -3.95, 39.55, -3.9), (39.55, -4.05, 39.6, -4.0), (39.55, -4.25, 39.6, -4.2), (39.55, -4.4, 39.6, -4.35), (39.15, -4.5, 39.2, -4.45), (39.05, -4.5, 39.1, -4.45), (39.5, -4.45, 39.55, -4.4), (39.45, -4.05, 39.5, -4.0), (39.55, -3.95, 39.6, -3.9), (39.0, -3.75, 39.05, -3.7), (39.5, -4.05, 39.55, -4.0), (39.0, -3.8, 39.05, -3.75), (38.95, -3.7, 39.0, -3.65), (39.5, -4.4, 39.55, -4.35),(39.05, -4.55, 39.1, -4.5), (39.5, -4.3, 39.55, -4.25), (39.45, -4.4, 39.5, -4.35), (39.5, -4.35, 39.55, -4.3), (39.4, -4.55, 39.45, -4.5), (39.05, -3.75, 39.1, -3.7), (39.45, -4.35, 39.5, -4.3)]
+
+def build_sample_points(tiles, step, target):
+    print(f"Building sample grid (step={step}deg ≈ {step*111000:.0f}m, target={target:,})...")
+    all_points = []
+    seen = set()
+
+    for (min_lon, min_lat, max_lon, max_lat) in tiles:
+        lats = np.arange(min_lat, max_lat, step)
+        lons = np.arange(min_lon, max_lon, step)
+        for lat in lats:
+            for lon in lons:
+                key = (round(lat, 6), round(lon, 6))
+                if key not in seen:
+                    seen.add(key)
+                    all_points.append(key)
+
+    print(f"  Raw grid points: {len(all_points):,}")
+
+    if len(all_points) > target:
+        indices = np.linspace(0, len(all_points) - 1, target, dtype=int)
+        all_points = [all_points[i] for i in indices]
+        print(f"  Subsampled to: {len(all_points):,}")
+
+    return all_points
+
+
+def check_gsv_metadata(lat, lon, api_key, radius):
+    url = "https://maps.googleapis.com/maps/api/streetview/metadata"
+    params = {
+        "location": f"{lat},{lon}",
+        "radius": radius,
+        "key": api_key,
+    }
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        if data.get("status") == "OK":
+            return data
+        return None
+    except Exception as e:
+        print(f"  Metadata error at ({lat},{lon}): {e}")
+        return None
+
+
+def build_image_url(lat, lon, heading, api_key, size="640x640", fov=90, pitch=0):
+    return (
+        f"https://maps.googleapis.com/maps/api/streetview"
+        f"?size={size}&location={lat},{lon}"
+        f"&fov={fov}&heading={heading}&pitch={pitch}&key={api_key}"
+    )
+
+
+def run_pipeline():
+    sample_points = build_sample_points(TILES, STEP_DEG, TARGET_LOCATIONS)
+    print(f"\nTotal points to check     : {len(sample_points):,}")
+    print(f"Max panoramas if all valid : {len(sample_points) * len(HEADINGS):,}")
+    print(f"Max download cost          : ${len(sample_points) * len(HEADINGS) * 0.007:.2f}\n")
+
+    print(f"Checking GSV metadata with {MAX_WORKERS} workers (radius={GSV_RADIUS_M}m)...")
+    results_by_pano = {}
+    completed = 0
+    total = len(sample_points)
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {
+            executor.submit(check_gsv_metadata, lat, lon, API_KEY, GSV_RADIUS_M): (lat, lon)
+            for lat, lon in sample_points
+        }
+
+        for future in as_completed(futures):
+            lat, lon = futures[future]
+            completed += 1
+
+            try:
+                meta = future.result()
+            except Exception as e:
+                print(f"  FAILED ({lat},{lon}): {e}")
+                continue
+
+            if meta:
+                pano_id = meta.get("pano_id")
+                if pano_id and pano_id not in results_by_pano:
+                    date = meta.get("date")
+                    year = date.split("-")[0] if date else None
+                    results_by_pano[pano_id] = [
+                        {
+                            "image_id": f"{pano_id}_{heading}",
+                            "source": "gsv",
+                            "date": date,
+                            "lat": lat,
+                            "lon": lon,
+                            "heading": heading,
+                            "image_url": build_image_url(lat, lon, heading, API_KEY),
+                            "year": year,
+                        }
+                        for heading in HEADINGS
+                    ]
+
+            if completed % 500 == 0 or completed == total:
+                pct = len(results_by_pano) / completed * 100
+                print(f"  {completed:,}/{total:,} checked | Unique locations: {len(results_by_pano):,} ({pct:.1f}% yield)")
+
+    all_rows = [row for rows in results_by_pano.values() for row in rows]
+    n_locations = len(results_by_pano)
+    print(f"\nWriting {len(all_rows):,} rows ({n_locations:,} locations × {len(HEADINGS)} headings) to {OUTPUT_CSV}...")
+
+    fieldnames = ["image_id", "source", "date", "lat", "lon", "heading", "image_url", "year"]
+
+    with open(OUTPUT_CSV, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(all_rows)
+
+    total_panos = len(all_rows)
+    print(f"\n── Summary ──────────────────────────────────────────────────")
+    print(f"  Unique locations with GSV coverage : {n_locations:,}")
+    print(f"  Total rows (4 headings each)        : {total_panos:,}")
+    print(f"  Estimated download cost             : ${total_panos * 0.007:.2f}")
+    print(f"  CSV saved to                        : {os.path.abspath(OUTPUT_CSV)}")
+    print(f"─────────────────────────────────────────────────────────────")
+
+
+if __name__ == "__main__":
+    run_pipeline()
