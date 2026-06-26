@@ -1,6 +1,4 @@
-# uvi-proj
-
-## Predicting Socioeconomic Wealth from Street View Imagery
+# Predicting Socioeconomic Wealth from Street View Imagery
 
 Estimating DHS wealth index scores from Google Street View imagery using computer vision features and regression, with the goal of scalable, low-cost poverty mapping across Sub-Saharan Africa.
 
