@@ -4,12 +4,13 @@ import requests
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
+import pandas as pd
 
 load_dotenv()
 gsv_key = os.getenv("GSV_KEY")
 
 API_KEY = gsv_key
-OUTPUT_CSV = "mombasa_merged_metadata.csv"
+REGION = "kisumu"
 
 STEP_DEG = 0.001        # ~110m spacing
 GSV_RADIUS_M = 150
@@ -17,7 +18,36 @@ HEADINGS = [0, 90, 180, 270]
 MAX_WORKERS = 12
 TARGET_LOCATIONS = 25000
 
-TILES = [(39.6, -4.25, 39.65, -4.2), (38.95, -3.75, 39.0, -3.7), (39.55, -4.0, 39.6, -3.95), (39.05, -3.7, 39.1, -3.65), (39.55, -4.3, 39.6, -4.25), (39.5, -4.25, 39.55, -4.2), (39.05, -3.8, 39.1, -3.75), (39.4, -4.45, 39.45, -4.4), (39.55, -4.35, 39.6, -4.3), (39.45, -4.25, 39.5,-4.2), (39.15, -4.55, 39.2, -4.5), (39.6, -4.3, 39.65, -4.25), (39.1, -4.5, 39.15, -4.45), (39.1, -4.55, 39.15, -4.5), (39.5, -4.5, 39.55, -4.45), (39.4, -4.5, 39.45, -4.45), (38.95, -3.8, 39.0, -3.75), (39.45, -4.3, 39.5, -4.25), (39.15, -4.6, 39.2, -4.55), (39.45, -4.45,39.5, -4.4), (39.1, -4.6, 39.15, -4.55), (39.45, -4.5, 39.5, -4.45), (39.5, -4.0, 39.55, -3.95), (39.0, -3.7, 39.05, -3.65), (39.45, -4.0, 39.5, -3.95), (39.45, -4.55, 39.5, -4.5), (39.6, -4.35, 39.65, -4.3), (39.45, -3.95, 39.5, -3.9), (39.05, -4.6, 39.1, -4.55), (39.5, -4.55, 39.55, -4.5), (39.5, -3.95, 39.55, -3.9), (39.55, -4.05, 39.6, -4.0), (39.55, -4.25, 39.6, -4.2), (39.55, -4.4, 39.6, -4.35), (39.15, -4.5, 39.2, -4.45), (39.05, -4.5, 39.1, -4.45), (39.5, -4.45, 39.55, -4.4), (39.45, -4.05, 39.5, -4.0), (39.55, -3.95, 39.6, -3.9), (39.0, -3.75, 39.05, -3.7), (39.5, -4.05, 39.55, -4.0), (39.0, -3.8, 39.05, -3.75), (38.95, -3.7, 39.0, -3.65), (39.5, -4.4, 39.55, -4.35),(39.05, -4.55, 39.1, -4.5), (39.5, -4.3, 39.55, -4.25), (39.45, -4.4, 39.5, -4.35), (39.5, -4.35, 39.55, -4.3), (39.4, -4.55, 39.45, -4.5), (39.05, -3.75, 39.1, -3.7), (39.45, -4.35, 39.5, -4.3)]
+def generate_tiles_from_clusters(df, tile_size=0.05, buffer=1):
+    """
+    Generate tiles centered on each cluster coordinate.
+    
+    tile_size: degrees per tile (~5.5km at Nigerian latitudes)
+    buffer: number of tiles to extend in each direction
+    """
+    tiles = set()
+    
+    for _, row in df.iterrows():
+        lat, lon = row["LATNUM"], row["LONGNUM"]
+        
+        if lat == 0.0 and lon == 0.0:
+            continue
+        
+        # snap to tile grid
+        for dlat in range(-buffer, buffer + 1):
+            for dlon in range(-buffer, buffer + 1):
+                min_lon = round(lon - (lon % tile_size) + dlon * tile_size, 6)
+                min_lat = round(lat - (lat % tile_size) + dlat * tile_size, 6)
+                max_lon = round(min_lon + tile_size, 6)
+                max_lat = round(min_lat + tile_size, 6)
+                tiles.add((min_lon, min_lat, max_lon, max_lat))
+    
+    return list(tiles)
+
+
+# usage
+clusters = pd.read_csv(f"data_kenya/metadata/{REGION}/dhs_{REGION}_clusters.csv")
+TILES = generate_tiles_from_clusters(clusters, tile_size=0.05, buffer=1)
 
 def build_sample_points(tiles, step, target):
     print(f"Building sample grid (step={step}deg ≈ {step*111000:.0f}m, target={target:,})...")
@@ -123,11 +153,11 @@ def run_pipeline():
 
     all_rows = [row for rows in results_by_pano.values() for row in rows]
     n_locations = len(results_by_pano)
-    print(f"\nWriting {len(all_rows):,} rows ({n_locations:,} locations × {len(HEADINGS)} headings) to {OUTPUT_CSV}...")
+    print(f"\nWriting {len(all_rows):,} rows ({n_locations:,} locations × {len(HEADINGS)} headings)")
 
     fieldnames = ["image_id", "source", "date", "lat", "lon", "heading", "image_url", "year"]
 
-    with open(OUTPUT_CSV, "w", newline="") as f:
+    with open(f"data_kenya/metadata/{REGION}/{REGION}_merged_metadata.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(all_rows)
@@ -137,7 +167,6 @@ def run_pipeline():
     print(f"  Unique locations with GSV coverage : {n_locations:,}")
     print(f"  Total rows (4 headings each)        : {total_panos:,}")
     print(f"  Estimated download cost             : ${total_panos * 0.007:.2f}")
-    print(f"  CSV saved to                        : {os.path.abspath(OUTPUT_CSV)}")
     print(f"─────────────────────────────────────────────────────────────")
 
 

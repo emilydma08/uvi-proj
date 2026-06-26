@@ -18,11 +18,11 @@ from PIL import Image
 from dotenv import load_dotenv
 import numpy as np
 
-
+REGION = ""
 # ── Config ────────────────────────────────────────────────────────────────────
-CLUSTERS_CSV  = Path("data/metadata/akwa/akwa_clusters_gsvmatched.csv")
-METADATA_CSV  = Path("data/metadata/akwa/akwa_merged_metadata.csv")
-IMG_DIR       = Path("data/raw/images/akwa")
+CLUSTERS_CSV  = Path(f"data_kenya/metadata/{REGION}/{REGION}_clusters_gsvmatched.csv")
+METADATA_CSV  = Path("data_kenya/metadata/{REGION}/{REGION}_merged_metadata.csv")
+IMG_DIR       = Path("data_kenya/raw/images/{REGION}")
 LOG_DIR       = Path("logs")
 FAILED_LOG    = LOG_DIR / "failed_images.txt"
 
